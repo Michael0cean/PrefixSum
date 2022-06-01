@@ -18,7 +18,8 @@ import os
 import sys
 
 def main():
-    if len(sys.argv) != 1:
+    print(len(sys.argv), sys.argv)
+    if len(sys.argv) < 2:
         print('python prefixsum.py <filename with prefixes>')
     else: 
         print('Try to open ',sys.argv[0])
