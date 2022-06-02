@@ -17,11 +17,8 @@ __author_email__ = "Mikhail.Okunev@gmail.com"
 from ipaddress import ip_address
 
 import sys
-import math
 import ipaddress
 import netaddr
-
-POWER_OF_TW0 = [1, 2, 4, 8, 16, 32, 64, 128]
 
 
 # Parsing the line to get an IP address and prefix or netmask
@@ -75,10 +72,8 @@ def ipbitshift(cidr):
     return ip>>prefixbitcount(cidr)
 
 def is_continuous(cidr_1, cidr_2):
-    return True if (iptoint(cidr_1)>>prefixbitcount(cidr_1))+1 == iptoint(cidr_2)>>prefixbitcount(cidr_1) else False
-
-#def is_continuous(cidr_1, cidr_2):
-#    return True if iptoint(cidr_1) + prefixtoint(cidr_1) == iptoint(cidr_2) else False
+    return True if cidr_1.prefixlen == cidr_2.prefixlen and \
+            (iptoint(cidr_1)>>prefixbitcount(cidr_1))+1 == iptoint(cidr_2)>>prefixbitcount(cidr_2) else False
 
 def is_integer(n):
     try:
@@ -88,6 +83,7 @@ def is_integer(n):
     else:
         return float(n).is_integer()
 
+"""
 def get_prefix_incr(n):
     if is_integer(math.sqrt(n)):
         return int(math.sqrt(n))
@@ -96,7 +92,6 @@ def get_prefix_incr(n):
             return i
     return 0
 
-
 def get_octets(cidr):
     octets = []
     ip_str = str(cidr.network)
@@ -104,132 +99,38 @@ def get_octets(cidr):
     for octet in ip_octets:
         octets.append(int(octet))
     return octets
-
-
-def check_affinity(cidr_a, cidr_b):
-    ip_a = get_octets(cidr_a)
-    ip_b = get_octets(cidr_b)
-
-    if cidr_a.prefixlen >= 16 and cidr_a.prefixlen <= 24 and \
-            cidr_b.prefixlen >= 16 and cidr_b.prefixlen <= 24:
-
-
-        if ip_a[2] == ip_b[2]-1 and cidr_a.prefixlen == cidr_b.prefixlen:
-            cidr_a.prefixlen = cidr_a.prefixlen-1
-            return cidr_a
-    return cidr_b
-
+"""
 
 def summarization(cidr_list):
-    for bits in range(25, 16, -1):
+    for bits in range(32, 16, -1):
         index = 1
-        print('-------------------------------')
         for cidr in cidr_list:
-            print(f'{cidrtostr(cidr)} \t\t IP(HEX): {hex(iptoint(cidr))} BROADCAST(HEX): {hex(iptoint(cidr) + prefixtoint(cidr)-1)} - SHIFT(HEX): {hex(iptoint(cidr)>>prefixbitcount(cidr))}')
-            if cidr.prefixlen == bits:
-                if ipbitshift(cidr)%2 == 0 and index < len(cidr_list) and is_continuous(cidr, cidr_list[index]):
-                    print(f'\tRemoving {cidrtostr(cidr_list[index])}')
-                    cidr_list.pop(index)
-                    cidr.prefixlen -=1
-                    print(f'{cidrtostr(cidr)} is summarised')
+            if cidr.prefixlen == bits and ipbitshift(cidr)%2 == 0 and index < len(cidr_list) \
+                    and is_continuous(cidr, cidr_list[index]):
+                cidr_list.pop(index)
+                cidr.prefixlen -=1
             index+=1
     return cidr_list
-
-
-# my own cidr summarization function 
-def cidr_summarization(cidr_list):
-    sum_cidr_list = []
-    n = 0
-    for i in range(len(cidr_list)):
-        cidr = cidr_list[i]
-        if i == len(cidr_list) - 1:
-            sum_cidr_list.append(cidr)
-            print(f'{cidrtostr(cidr)} the last record')
-        else:
-            if not is_continuous(cidr, cidr_list[i+1]):
-                sum_cidr_list.append(cidr)
-                print(f'{cidrtostr(cidr)} is not continuous')
-            elif ipbitshift(cidr)%2 != 0:
-                sum_cidr_list.append(cidr)
-                print(f'{cidrtostr(cidr)} is not even')
-            else:
-                print(f'{cidrtostr(cidr)} is continuous, includes:')   
-                x = i+1
-                n = 0
-                while x < len(cidr_list)-1 and is_continuous(cidr, cidr_list[x]):
-                    print(f'\t{cidrtostr(cidr_list[x])}')                   
-                    x+=1                    
-                    n+=1
-                    i+=1
-#        print(f'{str(cidr.network)}/{str(cidr.prefixlen)} \t\t IP(HEX): {hex(iptoint(cidr))} BROADCAST(HEX): {hex(iptoint(cidr) + #prefixtoint(cidr)-1)} - SHIFT(HEX): {hex(iptoint(cidr)>>prefixbitcount(cidr))}')
-
-#                n = count_continuous(cidr_list[i:])
-
-#        x = i
-#        n = 0 
-#        while x < len(cidr_list)-1 and is_continuous(cidr_list[x], cidr_list[x+1]):
-#            x+=1
-#            n+=1
-#        if n > 1:
-#            print(f'n = {n}, i = {i}, x = {x}')
-#           prefix_incr = POWER_OF_TW0.index(n)
-#           if prefix_incr >= 0:
-#                cidr.prefixlen += prefix_incr
-#                print(f'Óptimization: increment {prefix_incr}, new network: {str(cidr.network)}/{str(cidr.prefixlen)}')
-#                i += n
-#            else:
-#                prefix_incr = find_lowest_prefix(cidr_list[i, x])
-#                print(f'Óptimization: increment {prefix_incr}, new network: {str(cidr.network)}/{str(cidr.prefixlen)}')
-
-#        for x in range(i, len(cidr_list), 1):
-#            is_continuous(cird,)
-#        if i < len(cidr_list) - 1:
-#            if ch
-#            iprange = netaddr.IPSet(cidr, cidr_list)
-#            if iprange.iscontiguous():
-#                print(f'{cidr.network}/{cidr.prefixlen-1} summarization')
-#            else:
-#                print(str(cidr.network) + '/' + str(cidr.prefixlen))
-#        else:
-#            print(str(cidr.network) + '/' + str(cidr.prefixlen))
-#        print(f'{str(cidr.network)}/{str(cidr.prefixlen)} - IP (HEX): {hex(iptoint(cidr))} - BROADCAST (HEX) {hex(iptoint(cidr) + #prefixtoint(cidr)-1)} - MASK (HEX): {hex(prefixtoint(cidr))} - {is_continuous(cidr, cidr_2)}')
-#        print(f'{str(cidr.network)}/{str(cidr.prefixlen)} \t\t IP(HEX): {hex(iptoint(cidr))} BROADCAST(HEX): {hex(iptoint(cidr) + #prefixtoint(cidr)-1)} - SHIFT(HEX): {hex(iptoint(cidr)>>prefixbitcount(cidr))}')
-
-#        if n == 0:
-#            sum_cidr_list.append(cidr)
-#        else:
-#            if sum_cidr_list[n].network == cidr.network:
-        
-        
-def print_cidr_list(cidr_list):
-    for cidr in cidr_list:
-        print(cidrtostr(cidr))
-
-
 
 
 def main():
     if len(sys.argv) > 1:
         print('Open source prefix file:', sys.argv[1])
+
         cidr_list = load_prefix_file(sys.argv[1])
-        print(f'\t{len(cidr_list)} found in the list')
-#        print_ip_list(cidr_list)
+        print(f'\t{len(cidr_list)} prefixes found in the list')
         cidr_list.sort()
- 
-        if len(sys.argv) == 3:
-            write_ip_list(sys.argv[2], cidr_list)
 
-        summarized_cidr_list = netaddr.cidr_merge(cidr_list)
-#        write_ip_list('output.txt', summarized_cidr_list)
-#        print_ip_list(summarized_cidr_list)
-#        print('-------------------------')
-#        print(f'\t{len(summarized_cidr_list)} summarized list')
+        # Summarization method 1
+#        summarized_cidr_list = netaddr.cidr_merge(cidr_list)
+#        print(f'Summarization 1 complete. New list has {len(summarized_cidr_list)} records.')
 
-#        cidr_summarization(cidr_list)
+        # Summarization method 2
         summarized_cidr_list = summarization(cidr_list)
-        print(f'Summarization complete. New list has {len(summarized_cidr_list)} records.')
-        print_cidr_list(summarized_cidr_list)
-#        write_ip_list('my_summarization.txt', summarized_cidr_list)      
+        print(f'Summarization 2 complete. New list has {len(summarized_cidr_list)} records.')
+
+        if len(sys.argv) == 3:
+            write_ip_list(sys.argv[2], summarized_cidr_list)
 
     else: 
         print('python3 prefixsum.py <input_source_prefix_list> <output_summarized_prefix_list>')
